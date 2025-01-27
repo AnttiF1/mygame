@@ -23,30 +23,28 @@
     </style>
 </head>
 <body>
-    <canvas id="flappyCanvas"></canvas>
+    <canvas id="gameCanvas"></canvas>
     <script>
-        // Asetetaan canvas
-        const canvas = document.getElementById("flappyCanvas");
+        const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
-        canvas.width = 800;
+
+        canvas.width = 400; // Kapeampi ruutu alkuperäisen Flappy Birdin tapaan
         canvas.height = 600;
 
-        // Muuttujat
-        let bird = { x: 150, y: 300, width: 30, height: 30, gravity: 0.1, lift: -12, velocity: 0, maxSpeed: 10 };
-        let pipes = [];
-        let clouds = [];
-        let pipeWidth = 50;
-        let pipeGap = 150;
+        // Päämuuttujat
+        const bird = { x: 50, y: 300, width: 30, height: 30, gravity: 0.25, lift: -6, velocity: 0 };
+        const pipes = [];
+        const pipeWidth = 50;
+        const pipeGap = 130; // Aukon korkeus
         let frame = 0;
         let score = 0;
         let gameOver = false;
 
-        // Lataa peli
+        // Alusta peli
         function init() {
             bird.y = canvas.height / 2;
             bird.velocity = 0;
-            pipes = [];
-            clouds = [];
+            pipes.length = 0; // Tyhjennä putket
             score = 0;
             frame = 0;
             gameOver = false;
@@ -61,27 +59,26 @@
         // Päivitä lintu
         function updateBird() {
             bird.velocity += bird.gravity;
-            bird.velocity = Math.min(bird.velocity, bird.maxSpeed); // Rajaa maksiminopeus
             bird.y += bird.velocity;
 
-            // Jos lintu osuu ylä- tai alareunaan
+            // Jos lintu osuu alareunaan tai nousee ulos ruudusta
             if (bird.y + bird.height > canvas.height || bird.y < 0) {
                 gameOver = true;
             }
         }
 
-        // Luo putkia
+        // Luo uusia putkia
         function createPipes() {
-            if (frame % 100 === 0) {
-                let pipeY = Math.random() * (canvas.height - pipeGap);
-                pipes.push({ x: canvas.width, y: pipeY });
+            if (frame % 90 === 0) { // Lisää putki joka 90. frame
+                const topHeight = Math.random() * (canvas.height - pipeGap - 100) + 50;
+                pipes.push({ x: canvas.width, y: topHeight });
             }
         }
 
         // Piirrä putket
         function drawPipes() {
             ctx.fillStyle = "green";
-            for (let pipe of pipes) {
+            for (const pipe of pipes) {
                 // Yläputki
                 ctx.fillRect(pipe.x, 0, pipeWidth, pipe.y);
                 // Alaputki
@@ -92,50 +89,21 @@
         // Päivitä putket
         function updatePipes() {
             for (let i = pipes.length - 1; i >= 0; i--) {
-                pipes[i].x -= 3;
+                pipes[i].x -= 2; // Putket liikkuvat vasemmalle
 
-                // Törmäys
+                // Poista putki, kun se menee ruudun ulkopuolelle
+                if (pipes[i].x + pipeWidth < 0) {
+                    pipes.splice(i, 1);
+                    score++; // Lisää piste
+                }
+
+                // Tarkista törmäys
                 if (
                     bird.x < pipes[i].x + pipeWidth &&
                     bird.x + bird.width > pipes[i].x &&
                     (bird.y < pipes[i].y || bird.y + bird.height > pipes[i].y + pipeGap)
                 ) {
                     gameOver = true;
-                }
-
-                // Pisteet ja poista putki
-                if (pipes[i].x + pipeWidth < 0) {
-                    pipes.splice(i, 1);
-                    score++;
-                }
-            }
-        }
-
-        // Luo pilviä
-        function createClouds() {
-            if (frame % 120 === 0) {
-                let cloudY = Math.random() * canvas.height / 2;
-                let cloudWidth = Math.random() * 60 + 40;
-                clouds.push({ x: canvas.width, y: cloudY, width: cloudWidth, height: 20 });
-            }
-        }
-
-        // Piirrä pilvet
-        function drawClouds() {
-            ctx.fillStyle = "white";
-            for (let cloud of clouds) {
-                ctx.fillRect(cloud.x, cloud.y, cloud.width, cloud.height);
-            }
-        }
-
-        // Päivitä pilvet
-        function updateClouds() {
-            for (let i = clouds.length - 1; i >= 0; i--) {
-                clouds[i].x -= 1; // Pilvet liikkuvat hitaasti
-
-                // Poista pilvet, jotka menevät ulos ruudulta
-                if (clouds[i].x + clouds[i].width < 0) {
-                    clouds.splice(i, 1);
                 }
             }
         }
@@ -156,20 +124,17 @@
                 ctx.font = "36px Arial";
                 ctx.fillText("Peli ohi!", canvas.width / 2 - 80, canvas.height / 2 - 20);
                 ctx.fillText(`Pisteet: ${score}`, canvas.width / 2 - 80, canvas.height / 2 + 20);
-                ctx.fillText("Paina välilyöntiä aloittaaksesi uudelleen", canvas.width / 2 - 250, canvas.height / 2 + 80);
+                ctx.fillText("Paina välilyöntiä aloittaaksesi uudelleen", canvas.width / 2 - 150, canvas.height / 2 + 60);
                 return;
             }
 
-            // Tyhjennä canvas
+            // Tyhjennä ruutu
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Päivitä ja piirrä
+            // Päivitä ja piirrä kaikki
             updateBird();
             createPipes();
             updatePipes();
-            createClouds();
-            updateClouds();
-            drawClouds();
             drawBird();
             drawPipes();
             drawScore();
@@ -178,19 +143,19 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Käynnistä peli
+        // Kontrollit
         window.addEventListener("keydown", (e) => {
             if (e.code === "Space") {
                 if (gameOver) {
-                    init();
+                    init(); // Aloita alusta
                     gameLoop();
                 } else {
-                    bird.velocity += bird.lift;
+                    bird.velocity = bird.lift; // Hypähdä ylöspäin
                 }
             }
         });
 
-        // Aloita peli
+        // Käynnistä peli
         init();
         gameLoop();
     </script>
