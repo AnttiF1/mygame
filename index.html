@@ -28,22 +28,25 @@
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
-        canvas.width = 400; // Kapeampi ruutu alkuperäisen Flappy Birdin tapaan
-        canvas.height = 600;
+        // Muutetaan peliruudun kokoa
+        canvas.width = 600;
+        canvas.height = 800;
 
         // Päämuuttujat
-        const bird = { x: 50, y: 300, width: 30, height: 30, gravity: 0.25, lift: -6, velocity: 0 };
+        const bird = { x: 50, y: 400, width: 30, height: 30, gravity: 0.25, lift: -6, velocity: 0, speed: 2 }; // speed lisääntyy
         const pipes = [];
         const pipeWidth = 50;
-        const pipeGap = 130; // Aukon korkeus
+        const pipeGap = 200; // Suurempi aukko putkien välillä
         let frame = 0;
         let score = 0;
         let gameOver = false;
+        let highScore = localStorage.getItem('highScore') ? parseInt(localStorage.getItem('highScore')) : 0;
 
         // Alusta peli
         function init() {
             bird.y = canvas.height / 2;
             bird.velocity = 0;
+            bird.speed = 2; // Alkuperäinen nopeus
             pipes.length = 0; // Tyhjennä putket
             score = 0;
             frame = 0;
@@ -65,11 +68,16 @@
             if (bird.y + bird.height > canvas.height || bird.y < 0) {
                 gameOver = true;
             }
+
+            // Nopeutetaan lintua joka 5. pisteen jälkeen
+            if (score % 5 === 0 && score > 0 && score % 5 === 0) {
+                bird.speed += 0.05; // Lisää lintun liikkumisnopeutta pienemmällä arvolla
+            }
         }
 
-        // Luo uusia putkia
+        // Luo uusia putkia (nyt väli pidennetty)
         function createPipes() {
-            if (frame % 90 === 0) { // Lisää putki joka 90. frame
+            if (frame % 150 === 0) { // Putket ilmestyvät harvemmin
                 const topHeight = Math.random() * (canvas.height - pipeGap - 100) + 50;
                 pipes.push({ x: canvas.width, y: topHeight });
             }
@@ -89,7 +97,7 @@
         // Päivitä putket
         function updatePipes() {
             for (let i = pipes.length - 1; i >= 0; i--) {
-                pipes[i].x -= 2; // Putket liikkuvat vasemmalle
+                pipes[i].x -= bird.speed; // Putket liikkuvat nopeammin, kun lintukin nopeutuu
 
                 // Poista putki, kun se menee ruudun ulkopuolelle
                 if (pipes[i].x + pipeWidth < 0) {
@@ -115,9 +123,21 @@
             ctx.fillText(`Pisteet: ${score}`, 20, 40);
         }
 
+        // Piirrä korkein pistemäärä
+        function drawHighScore() {
+            ctx.fillStyle = "black";
+            ctx.font = "24px Arial";
+            ctx.fillText(`HS: ${highScore}`, canvas.width - 100, 40);
+        }
+
         // Pelin silmukka
         function gameLoop() {
             if (gameOver) {
+                // Päivitetään korkein pistemäärä, jos peli päättyy ja uusi pistemäärä on suurempi
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('highScore', highScore); // Tallennetaan korkein pistemäärä
+                }
                 ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "white";
@@ -138,6 +158,7 @@
             drawBird();
             drawPipes();
             drawScore();
+            drawHighScore(); // Piirrä korkein pistemäärä
 
             frame++;
             requestAnimationFrame(gameLoop);
