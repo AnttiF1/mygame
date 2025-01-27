@@ -70,8 +70,9 @@
             }
 
             // Nopeutetaan lintua joka 5. pisteen jälkeen
-            if (score % 5 === 0 && score > 0 && score % 5 === 0) {
-                bird.speed += 0.05; // Lisää lintun liikkumisnopeutta pienemmällä arvolla
+            if (score > 0 && score % 5 === 0) {
+                bird.speed += 0.01; // Lisää lintun liikkumisnopeutta 0.01 joka viidennellä pisteellä
+                score++; // Varmistetaan, että vain kerran per viides piste
             }
         }
 
