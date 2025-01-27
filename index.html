@@ -32,7 +32,7 @@
         canvas.height = 600;
 
         // Muuttujat
-        let bird = { x: 150, y: 300, width: 30, height: 30, gravity: 0.3, lift: -10, velocity: 0 };
+        let bird = { x: 150, y: 300, width: 30, height: 30, gravity: 0.4, lift: -12, velocity: 0, maxSpeed: 10 };
         let pipes = [];
         let clouds = [];
         let pipeWidth = 50;
@@ -61,6 +61,7 @@
         // Päivitä lintu
         function updateBird() {
             bird.velocity += bird.gravity;
+            bird.velocity = Math.min(bird.velocity, bird.maxSpeed); // Rajaa maksiminopeus
             bird.y += bird.velocity;
 
             // Jos lintu osuu ylä- tai alareunaan
@@ -184,7 +185,7 @@
                     init();
                     gameLoop();
                 } else {
-                    bird.velocity = bird.lift;
+                    bird.velocity += bird.lift;
                 }
             }
         });
